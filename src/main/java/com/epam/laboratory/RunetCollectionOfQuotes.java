@@ -9,6 +9,6 @@ public class RunetCollectionOfQuotes {
 
         System.out.println("Print number of quote: ");
         String number = scanner.nextLine();
-        System.out.println(new WebPageLoader().getQuoteByNumber(number));
+        System.out.println(new RequestHandler().returnQuoteByNumber(number));
     }
 }

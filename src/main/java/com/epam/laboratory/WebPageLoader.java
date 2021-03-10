@@ -14,58 +14,21 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-public class WebPageLoader {
+class WebPageLoader {
 
-    static private URL mainWebsiteUrl = null;
+    private final static Logger LOGGER = Logger.getLogger(WebPageLoader.class);
 
-    static {
-        try {
-            mainWebsiteUrl = new URL("https://bash.im/");
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
+    static String getQuoteByNumber(String number) {
+        return loadQuoteByNumber(number.trim());
     }
 
-    final static Logger LOGGER = Logger.getLogger(WebPageLoader.class);
-
-
-    public String getQuoteByNumber(String number) {
-        return new Parser()
-                .normalizeQuote(
-                        loadQuoteByNumber(
-                                number.trim()));
-    }
-
-    public static String getActualMaxAllowableValue() {
-        String match = "000001";
-        Pattern pattern = Pattern.compile("<article class=\"quote\" data-quote=\"(.+?)\">");
-        try {
-            LineNumberReader reader = new LineNumberReader(new InputStreamReader(mainWebsiteUrl.openStream()));
-            String string = reader.readLine();
-            while (string != null) {
-                Matcher matcher = pattern.matcher(string);
-                if (matcher.find()) {
-                    match = matcher.group(1);
-                    break;
-                }
-                string = reader.readLine();
-            }
-            reader.close();
-        } catch (IOException e) {
-            LOGGER.error("getActualMaxAllowableValue failed", e);
-        }
-        LOGGER.info("getActualMaxAllowableValue get: " + match);
-        return match;
-    }
-
-    static String loadQuoteByNumber(String number) {
+    private static String loadQuoteByNumber(String number) {
         String desiredUrlAsString = new Parser().configureUrlForRequest(number);
         Pattern startQuoteCodePattern = Pattern.compile("og:description\"\scontent=\"(.+?)\"\s/>");
         String desiredQuote = "No more quotes";
         try {
             URL urlOfDesiredQuote = new URL(desiredUrlAsString);
-            try {
-                LineNumberReader lineNumberReader = new LineNumberReader(new InputStreamReader(urlOfDesiredQuote.openStream()));
+            try (LineNumberReader lineNumberReader = new LineNumberReader(new InputStreamReader(urlOfDesiredQuote.openStream()))) {
                 String lineRead = lineNumberReader.readLine();
                 while (lineRead != null) {
                     Matcher startQuoteCodeMatcher = startQuoteCodePattern.matcher(lineRead);
@@ -74,14 +37,13 @@ public class WebPageLoader {
                     }
                     lineRead = lineNumberReader.readLine();
                 }
-                lineNumberReader.close();
             } catch (IOException e) {
                 LOGGER.error(e);
             }
         } catch (MalformedURLException e) {
             LOGGER.error(e);
         }
-        if(desiredQuote.equals("No more quotes")){
+        if (desiredQuote.equals("No more quotes")) {
             LOGGER.error("Incorrect input or quote doesn't exist", new NotANumberException("Input string not a number"));
         }
         LOGGER.info("loadQuoteByNumber get: " + desiredQuote);
